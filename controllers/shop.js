@@ -14,6 +14,8 @@ exports.getProducts = (req, res, next) => {
     });
 };
 
+const ItemsPerPage = 3;
+
 exports.getProduct = (req, res, next) => {
   const prodId = req.params.productId;
   // Product.findAll({ where: { id: prodId } })
@@ -37,13 +39,25 @@ exports.getProduct = (req, res, next) => {
 };
 
 exports.getIndex = (req, res, next) => {
-  Product.findAll()
+  const page = +req.query.page || 1;
+   let totalItems;
+  Product.findAndCountAll().then(numProducts => {
+    totalItems = numProducts.count; 
+    return  Product.findAll({offset: (page -1) * ItemsPerPage, limit: ItemsPerPage })
+  })
     .then(products => {
       res.render('shop/index', {
         prods: products,
         pageTitle: 'Shop',
-        path: '/'
+        path: '/',
+        currentPage: page,
+        hasNextPage: ItemsPerPage * page < totalItems,
+        hasPreviousPage: page > 1,
+        nextPage: page + 1,
+        previousPage: page - 1,
+        lastPage: Math.ceil(totalItems/ItemsPerPage),
       });
+       
     })
     .catch(err => {
       console.log(err);
